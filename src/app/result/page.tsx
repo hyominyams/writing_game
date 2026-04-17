@@ -11,7 +11,9 @@ import { RefreshCw, Trophy, Target, Award, ArrowRight } from "lucide-react";
 export default function ResultPage() {
   const router = useRouter();
   const { results, actions } = useGame();
-  const [average, setAverage] = useState(0);
+  
+  const total = results.reduce((acc, curr) => acc + curr.score, 0);
+  const average = results.length > 0 ? Math.round(total / results.length) : 0;
 
   useEffect(() => {
     if (results.length === 0) {
@@ -19,17 +21,13 @@ export default function ResultPage() {
       return;
     }
 
-    const total = results.reduce((acc, curr) => acc + curr.score, 0);
-    const avg = Math.round(total / results.length);
-    setAverage(avg);
-
     // Fire confetti for wow effect
-    if (avg > 0) {
+    if (average > 0) {
       const duration = 3 * 1000;
       const animationEnd = Date.now() + duration;
       const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
-      const interval: any = setInterval(function () {
+      const interval: ReturnType<typeof setInterval> = setInterval(function () {
         const timeLeft = animationEnd - Date.now();
 
         if (timeLeft <= 0) {
