@@ -8,7 +8,7 @@ const openai = new OpenAI({
 // Use edge runtime for faster responses if needed, but node is fine too.
 export async function POST(req: Request) {
   try {
-    const { answer, hint, category } = await req.json();
+    const { answer, hint } = await req.json();
 
     if (!answer) {
       return NextResponse.json(
@@ -37,14 +37,23 @@ Output JSON only with keys "score" (number) and "feedback" (string, max 1 senten
       max_tokens: 500,
     });
 
-    const resultText = completion.choices[0].message.content;
-    const parsed = JSON.parse(resultText || '{"score": 0, "feedback": "채점 오류가 발생했습니다."}');
+    let resultText = completion.choices[0].message.content || '';
+    // Remove markdown code blocks if present (since response_format was removed)
+    resultText = resultText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+    
+    let parsed;
+    try {
+      parsed = JSON.parse(resultText);
+    } catch (parseError) {
+      console.error('JSON Parse Error. Raw text:', resultText);
+      throw new Error("AI 응답을 JSON으로 변환할 수 없습니다.");
+    }
 
     return NextResponse.json(parsed);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Grading error:', error);
     return NextResponse.json(
-      { score: 0, feedback: "서버 오류로 평가를 완료하지 못했습니다." },
+      { score: 0, feedback: `서버 오류: ${error.message || '알 수 없는 오류가 발생했습니다.'}` },
       { status: 500 }
     );
   }
