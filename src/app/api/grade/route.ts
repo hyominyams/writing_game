@@ -38,9 +38,13 @@ Output JSON only with keys "score" (number) and "feedback" (string, max 1 senten
     });
 
     let resultText = completion.choices[0].message.content || '';
-    // Remove markdown code blocks if present (since response_format was removed)
-    resultText = resultText.replace(/```json/gi, '').replace(/```/gi, '').trim();
     
+    // Extract JSON block from potential babble
+    const jsonStart = resultText.indexOf('{');
+    const jsonEnd = resultText.lastIndexOf('}');
+    if (jsonStart !== -1 && jsonEnd !== -1) {
+      resultText = resultText.substring(jsonStart, jsonEnd + 1);
+    }
     let parsed;
     try {
       parsed = JSON.parse(resultText);
