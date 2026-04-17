@@ -19,11 +19,12 @@ export async function POST(req: Request) {
 
     // System prompt engineered for speed and JSON output
     const systemPrompt = `You are a Korean writing grader. 
-Evaluate the user's Korean description of an image based on the provided HINT.
+Evaluate the user's Korean description purely based on how rich, vivid, and fluent their expression is.
+Do NOT evaluate whether the sentence strictly matches the provided HINT or is entirely relevant to the topic. Just evaluate their creativity and descriptive quality.
 Grading criteria:
-- Low score (0-50): Simple factual statements or too short.
-- High score (80-100): Specific, vivid, and sensory descriptions.
-- Penalty: Unrelated content or grammar mistakes.
+- Low score (0-50): Simple vocabulary, short, or lacks descriptive details.
+- High score (80-100): Highly specific, vivid, sensory, and creative descriptions with varied vocabulary.
+- Do NOT penalize for being unrelated to the original intention. We only care about how beautifully they write.
 Output JSON only with keys "score" (number) and "feedback" (string, max 1 sentence in Korean).`;
 
     const userPrompt = `HINT: ${hint}\nUSER ANSWER: ${answer}`;
