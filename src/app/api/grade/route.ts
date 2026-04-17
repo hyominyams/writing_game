@@ -1,0 +1,53 @@
+import { NextResponse } from 'next/server';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || 'dummy_key', // Ensure there's a fallback or expect process.env.OPENAI_API_KEY
+});
+
+// Use edge runtime for faster responses if needed, but node is fine too.
+export async function POST(req: Request) {
+  try {
+    const { answer, hint, category } = await req.json();
+
+    if (!answer) {
+      return NextResponse.json(
+        { score: 0, feedback: "아무것도 작성하지 않았습니다." },
+        { status: 200 }
+      );
+    }
+
+    // System prompt engineered for speed and JSON output
+    const systemPrompt = `You are a Korean writing grader. 
+Evaluate the user's Korean description of an image based on the provided HINT.
+Grading criteria:
+- Low score (0-50): Simple factual statements or too short.
+- High score (80-100): Specific, vivid, and sensory descriptions.
+- Penalty: Unrelated content or grammar mistakes.
+Output JSON only with keys "score" (number) and "feedback" (string, max 1 sentence in Korean).`;
+
+    const userPrompt = `HINT: ${hint}\nUSER ANSWER: ${answer}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-5-nano", // fast and cheap
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+      max_tokens: 150,
+    });
+
+    const resultText = completion.choices[0].message.content;
+    const parsed = JSON.parse(resultText || '{"score": 0, "feedback": "채점 오류가 발생했습니다."}');
+
+    return NextResponse.json(parsed);
+  } catch (error) {
+    console.error('Grading error:', error);
+    return NextResponse.json(
+      { score: 0, feedback: "서버 오류로 평가를 완료하지 못했습니다." },
+      { status: 500 }
+    );
+  }
+}
