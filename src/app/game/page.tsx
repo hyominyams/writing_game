@@ -78,7 +78,14 @@ export default function GamePage() {
           }),
         });
         
-        if (!res.ok) throw new Error("API call failed");
+        if (!res.ok) {
+          let errMessage = "API call failed";
+          try {
+            const errData = await res.json();
+            if (errData?.feedback) errMessage = errData.feedback;
+          } catch (e) {}
+          throw new Error(errMessage);
+        }
         
         const data = await res.json();
         
@@ -100,9 +107,9 @@ export default function GamePage() {
       } else {
         router.push("/result");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      setFeedbackError("채점 중 오류가 발생했습니다. 다시 시도해주세요.");
+      setFeedbackError(error.message || "채점 중 오류가 발생했습니다. 다시 시도해주세요.");
       setIsSubmitting(false);
     }
   };
