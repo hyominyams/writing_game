@@ -34,9 +34,7 @@ Output JSON only with keys "score" (number) and "feedback" (string, max 1 senten
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      response_format: { type: "json_object" },
-      temperature: 0.3,
-      max_tokens: 150,
+      max_tokens: 500,
     });
 
     const resultText = completion.choices[0].message.content;
