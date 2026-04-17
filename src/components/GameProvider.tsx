@@ -12,10 +12,11 @@ export type AnswerResult = {
 
 type GameState = {
   selectedQuestions: Question[];
+  targetCount: number;
   timeLimit: number;
   results: AnswerResult[];
   actions: {
-    startGame: (questions: Question[], timeLimit: number) => void;
+    startGame: (questions: Question[], timeLimit: number, targetCount: number) => void;
     addResult: (result: AnswerResult) => void;
     resetGame: () => void;
   };
@@ -25,11 +26,13 @@ const GameContext = createContext<GameState | null>(null);
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const [selectedQuestions, setSelectedQuestions] = useState<Question[]>([]);
+  const [targetCount, setTargetCount] = useState(10);
   const [timeLimit, setTimeLimit] = useState(60);
   const [results, setResults] = useState<AnswerResult[]>([]);
 
-  const startGame = (questions: Question[], timeLimit: number) => {
+  const startGame = (questions: Question[], timeLimit: number, targetCount: number) => {
     setSelectedQuestions(questions);
+    setTargetCount(targetCount);
     setTimeLimit(timeLimit);
     setResults([]);
   };
@@ -47,6 +50,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     <GameContext.Provider
       value={{
         selectedQuestions,
+        targetCount,
         timeLimit,
         results,
         actions: { startGame, addResult, resetGame },

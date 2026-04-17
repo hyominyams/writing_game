@@ -26,11 +26,10 @@ export default function StartPage() {
 
   const handleStart = () => {
     setIsStarting(true);
-    // Select requested number of questions randomly
+    // Select requested number of questions randomly (with extra buffer for skipping)
     const shuffled = shuffle(questions);
-    const selected = shuffled.slice(0, selectedCount);
 
-    actions.startGame(selected, selectedTime);
+    actions.startGame(shuffled, selectedTime, selectedCount);
 
     setTimeout(() => {
       router.push("/game");

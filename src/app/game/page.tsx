@@ -9,7 +9,7 @@ import { Timer, Send, AlertCircle, Loader2 } from "lucide-react";
 
 export default function GamePage() {
   const router = useRouter();
-  const { selectedQuestions, timeLimit, actions } = useGame();
+  const { selectedQuestions, targetCount, timeLimit, actions, results } = useGame();
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(timeLimit);
@@ -97,16 +97,7 @@ export default function GamePage() {
         });
       }
 
-      // Next question or result
-      if (currentIndex < selectedQuestions.length - 1) {
-        setAnswer("");
-        setCurrentIndex((prev) => prev + 1);
-        setTimeLeft(timeLimit);
-        setIsSubmitting(false);
-        setTimeout(() => inputRef.current?.focus(), 100);
-      } else {
-        router.push("/result");
-      }
+      moveToNext(true);
     } catch (error: any) {
       console.error(error);
       setFeedbackError(error.message || "채점 중 오류가 발생했습니다. 다시 시도해주세요.");
@@ -114,10 +105,29 @@ export default function GamePage() {
     }
   };
 
+  const handleSkip = () => {
+    if (isSubmitting) return;
+    moveToNext(false);
+  };
+
+  const moveToNext = (didSubmit: boolean) => {
+    const nextResultsCount = didSubmit ? results.length + 1 : results.length;
+    if (nextResultsCount >= targetCount || currentIndex >= selectedQuestions.length - 1) {
+      router.push("/result");
+    } else {
+      setAnswer("");
+      setCurrentIndex((prev) => prev + 1);
+      setTimeLeft(timeLimit);
+      setIsSubmitting(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  };
+
   if (selectedQuestions.length === 0) return null;
 
   const currentQuestion = selectedQuestions[currentIndex];
-  const progress = ((currentIndex + 1) / selectedQuestions.length) * 100;
+  // Calculate progress based on how many they HAVE answered vs target count.
+  const progress = ((results.length) / targetCount) * 100;
   const timeProgress = (timeLeft / timeLimit) * 100;
   const isTimeLow = timeLeft <= 10;
 
@@ -128,7 +138,7 @@ export default function GamePage() {
         {/* Header & Progress */}
         <div className="flex items-center justify-between mb-4 md:mb-8">
           <div className="bg-slate-900 border border-slate-800 rounded-full px-4 py-2 font-semibold text-slate-300">
-            문제 <span className="text-white">{currentIndex + 1}</span> / {selectedQuestions.length}
+            진행 <span className="text-white">{results.length + 1}</span> / {targetCount}
           </div>
           
           <div className={`flex items-center gap-2 font-mono text-xl md:text-2xl font-bold px-4 py-2 rounded-full border ${isTimeLow ? 'bg-red-500/20 text-red-400 border-red-500/50 animate-pulse' : 'bg-slate-900 text-indigo-400 border-slate-800'}`}>
@@ -212,23 +222,32 @@ export default function GamePage() {
               <div className="mt-6 flex flex-col gap-3">
                 <p className="text-xs text-slate-500 text-center flex-1">Press <kbd className="font-mono bg-slate-800 px-1 py-0.5 rounded text-slate-300 mx-1">Ctrl+Enter</kbd> to submit instantly</p>
                 
-                <button
-                  onClick={handleManualSubmit}
-                  disabled={isSubmitting || answer.trim() === ""}
-                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98]"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      AI가 문장을 평가 중입니다...
-                    </>
-                  ) : (
-                    <>
-                      제출하기
-                      <Send className="w-5 h-5" />
-                    </>
-                  )}
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSkip}
+                    disabled={isSubmitting}
+                    className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 rounded-xl font-bold transition-all shadow active:scale-[0.98]"
+                  >
+                    통과하기
+                  </button>
+                  <button
+                    onClick={handleManualSubmit}
+                    disabled={isSubmitting || answer.trim() === ""}
+                    className="flex-[2] py-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98]"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        채점 중...
+                      </>
+                    ) : (
+                      <>
+                        제출하기
+                        <Send className="w-5 h-5" />
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
